@@ -1,26 +1,69 @@
-This dockerfile can be used to build a CentOS Gluster Container.
+# Self Provisioning - Node-aware - Rancher Based Dockerized Gluster Cluster
 
-# Support for fake disks
+ **Overview**
 
-This container offers several configuration options that make it easier to test
-the functionality. It is possible to configure a fake disk so that there is no
-requirement for additional block devices on the container host. The container
-has a `gluster-fake-disk` service that consumes the following environment
-variables:
+This container is based on official Gluster sources from `gluster/gluster-containers`.
+It has been modified to automatically deploy a multinode replication cluster
+when deployed over a Rancher Environment with at least two nodes.
 
-- `USE_FAKE_DISK` (default is empty) when set to a non-empty value, setup a
-  fake disk. The other environment variables have defaults and do not need to
-  be set.
+**Caveats**
 
-- `FAKE_DISK_FILE` (defaults to `/srv/fake-disk.img`) the fake disk will be
-  backed by this file. To have persistent storage, make sure to have the
-  directory where this file is located bind-mounted as a volume in the
-  container.
+This docker image will not work on standard docker environments as it relies on
+Rancher's Metadata Service for the autodiscovery feature.
 
-- `FAKE_DISK_SIZE` (defaults to `10G`) sets the size of the `FAKE_DISK_FILE`
-  through `truncate` in case the file does not exist.
+**Features**
 
-- `FAKE_DISK_DEV` (defaults to `/dev/fake`) the device node under `/dev` that
-  should be provided for the disk. This will be a symlink to the `/dev/loop<N>`
-  loopback device.
+- Automatic Gluster replicated volume generation.
+- Nodes will reconnect upon restarts or upgrades.
+- New nodes will be added automatically to an existing cluster.
+- Nodes with integrated healhcheck for self-healing, recovery.
 
+**Usage**
+
+*Example Docker Compose - Cluster Deployment for a Volume named MyVol*
+
+`version: '2'
+services:
+  Gluster:
+    privileged: true
+    cap_add:
+    - SYS_ADMIN
+    image: 0urob0r0s/rancher-auto-gluster:latest
+    environment:
+      ServiceTimeOut: '20'
+      VolumeName: MyVol
+      WaitTimeOut: '120'
+    stdin_open: true
+    volumes:
+    - /dev/:/dev
+    - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    - /opt/volumes/gluster-rancher/etc:/etc/glusterfs:z
+    - /opt/volumes/gluster-rancher/var/lib/glusterd:/var/lib/glusterd:z
+    - /opt/volumes/gluster-rancher/var/log/glusterfs:/var/log/glusterfs:z
+    - /opt/volumes/gluster-rancher/brick:/opt/brick
+    - /opt/volumes/gluster-rancher/mount:/opt/mount:shared
+    tty: true
+    labels:
+      io.rancher.container.hostname_override: container_name
+      io.rancher.container.pull_image: always
+      io.rancher.scheduler.global: 'true'`
+ 
+*Example Rancher Compose - Provides HealthCheck Configuration*
+
+`version: '2'
+services:
+  Gluster:
+    retain_ip: true
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      recreate_on_quorum_strategy_config:
+        quorum: 1
+      port: 9090
+      unhealthy_threshold: 3
+      initializing_timeout: 120000
+      interval: 2000
+      strategy: recreateOnQuorum
+      request_line: GET "/" "HTTP/1.0"
+      reinitializing_timeout: 60000`
