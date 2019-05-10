@@ -22,7 +22,8 @@ Rancher's Metadata Service for the autodiscovery feature.
 
 *Example Docker Compose - Cluster Deployment for a Volume named MyVol*
 
-`version: '2'
+```
+version: '2'
 services:
   Gluster:
     privileged: true
@@ -46,11 +47,13 @@ services:
     labels:
       io.rancher.container.hostname_override: container_name
       io.rancher.container.pull_image: always
-      io.rancher.scheduler.global: 'true'`
+      io.rancher.scheduler.global: 'true'
+ ```
  
 *Example Rancher Compose - Provides HealthCheck Configuration*
 
-`version: '2'
+```
+version: '2'
 services:
   Gluster:
     retain_ip: true
@@ -66,4 +69,5 @@ services:
       interval: 2000
       strategy: recreateOnQuorum
       request_line: GET "/" "HTTP/1.0"
-      reinitializing_timeout: 60000`
+      reinitializing_timeout: 60000
+```
