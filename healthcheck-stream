@@ -1,3 +1,4 @@
+service healthcheck
 {
   socket_type = stream
   flags = REUSE
