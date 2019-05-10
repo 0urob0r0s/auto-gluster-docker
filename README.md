@@ -71,3 +71,5 @@ services:
       request_line: GET "/" "HTTP/1.0"
       reinitializing_timeout: 60000
 ```
+
+**Head over the folder `ComposeFiles` on the repo for a more complex example.**
