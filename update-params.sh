@@ -51,5 +51,8 @@ if [ -c "${HOST_DEV_DIR}/zero" ] && [ -c "${HOST_DEV_DIR}/null" ]; then
     mount --rbind "${HOST_DEV_DIR}" /dev
 fi
 
+#Export ENV
+declare -p | grep -Ev 'BASHOPTS|BASH_VERSINFO|EUID|PPID|SHELLOPTS|UID' > /container.env
+
 # Hand off to CMD
 exec "$@"

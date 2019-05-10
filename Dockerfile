@@ -1,6 +1,6 @@
 FROM centos:7
 
-MAINTAINER Humble Chirammal hchiramm@redhat.com Saravanakumar Arumugam sarumuga@redhat.com
+MAINTAINER Humble Chirammal hchiramm@redhat.com Saravanakumar Arumugam sarumuga@redhat.com Joao Guimaraes joao@linux.com.uy
 
 ENV container docker
 
@@ -9,7 +9,7 @@ LABEL architecture="$ARCH" \
       name="gluster/gluster-centos" \
       version="latest" \
       vendor="CentOS Community" \
-      summary="This image has a running glusterfs service (CentOS 7 + latest Gluster)" \
+      summary="This image has a running glusterfs service (CentOS 7 + latest Gluster)" and adds auto-discovery with cluster self provisionig code.\
       io.k8s.display-name="Gluster server based on CentOS 7" \
       io.k8s.description="Gluster Image is based on CentOS Image which is a scalable network filesystem. Using common off-the-shelf hardware, you can create large, distributed storage solutions for media streaming, data analysis, and other data- and bandwidth-intensive tasks." \
       description="Gluster Image is based on CentOS Image which is a scalable network filesystem. Using common off-the-shelf hardware, you can create large, distributed storage solutions for media streaming, data analysis, and other data- and bandwidth-intensive tasks." \
@@ -33,6 +33,9 @@ yum --setopt=tsflags=nodocs -y install openssh-clients  && \
 yum --setopt=tsflags=nodocs -y install rsync  && \
 yum --setopt=tsflags=nodocs -y install tar  && \
 yum --setopt=tsflags=nodocs -y install cronie  && \
+yum --setopt=tsflags=nodocs -y install wget  && \
+yum --setopt=tsflags=nodocs -y install curl  && \
+yum --setopt=tsflags=nodocs -y install xinetd  && \
 yum --setopt=tsflags=nodocs -y install sudo  && \
 yum --setopt=tsflags=nodocs -y install xfsprogs  && \
 yum --setopt=tsflags=nodocs -y install glusterfs  && \
@@ -45,6 +48,7 @@ sed -i '/Port 22/c\Port 2222' /etc/ssh/sshd_config && \
 sed -i 's/Requires\=rpcbind\.service//g' /usr/lib/systemd/system/glusterd.service && \
 sed -i 's/rpcbind\.service/gluster-setup\.service/g' /usr/lib/systemd/system/glusterd.service && \
 sed -i 's/rpcbind\.service//g' /usr/lib/systemd/system/gluster-blockd.service && \
+echo "healthcheck     9090/tcp" >> /etc/services && \
 mkdir -p /etc/glusterfs_bkp /var/lib/glusterd_bkp /var/log/glusterfs_bkp &&\
 cp -r /etc/glusterfs/* /etc/glusterfs_bkp &&\
 cp -r /var/lib/glusterd/* /var/lib/glusterd_bkp &&\
@@ -107,6 +111,14 @@ ADD status-probe.sh /usr/local/bin/status-probe.sh
 ADD tcmu-runner-params /etc/sysconfig/tcmu-runner-params
 ADD gluster-check-diskspace.service  /etc/systemd/system/gluster-check-diskspace.service
 ADD check_diskspace.sh /usr/local/bin/check_diskspace.sh
+ADD healthcheck-stream /etc/xinetd.d/healthcheck-stream
+ADD autogluster.sh /root/autogluster.sh
+ADD finder.sh /root/finder.sh
+ADD healthcheck.sh /root/healthcheck.sh
+ADD common.inc /root/common.inc
+ADD config.inc /root/config.inc
+ADD gluster.inc /root/gluster.inc
+ADD cron-root /var/spool/cron/root
 
 RUN chmod 644 /etc/systemd/system/gluster-setup.service && \
 chmod 644 /etc/systemd/system/gluster-check-diskspace.service && \
@@ -117,6 +129,9 @@ chmod 500 /usr/sbin/gluster-block-setup.sh && \
 chmod +x /usr/local/bin/update-params.sh && \
 chmod +x /usr/local/bin/status-probe.sh && \
 chmod +x /usr/local/bin/check_diskspace.sh && \
+chmod +x /root/autogluster.sh && \
+chmod +x /root/finder.sh && \
+chmod +x /root/healthcheck.sh && \
 systemctl disable nfs-server.service && \
 systemctl mask getty.target && \
 systemctl enable gluster-fake-disk.service && \
