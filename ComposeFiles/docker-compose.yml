@@ -1,0 +1,60 @@
+version: '2'
+services:
+  Samba:
+    privileged: true
+    cap_add:
+    - SYS_ADMIN
+    image: dperson/samba
+    environment:
+      GROUPID: '1000'
+      USERID: '1000'
+    stdin_open: true
+    volumes:
+    - /dev/:/dev
+    - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    - /opt/volumes/gluster-rancher/mount/NewStore:/shares/shared:shared
+    tty: true
+    links:
+    - Gluster:storage
+    command:
+    - -w
+    - DOCKER
+    - -s
+    - Inetpub;/shares/shared;yes;no;yes;all;none;;New Shared Folder
+    labels:
+      io.rancher.container.hostname_override: container_name
+      io.rancher.container.pull_image: always
+      io.rancher.scheduler.global: 'true'
+  Gluster:
+    privileged: true
+    cap_add:
+    - SYS_ADMIN
+    image: 0urob0r0s/rancher-auto-gluster:latest
+    environment:
+      ServiceTimeOut: '20'
+      VolumeName: NewStore
+      WaitTimeOut: '120'
+    stdin_open: true
+    volumes:
+    - /dev/:/dev
+    - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    - /opt/volumes/gluster-rancher/etc:/etc/glusterfs:z
+    - /opt/volumes/gluster-rancher/var/lib/glusterd:/var/lib/glusterd:z
+    - /opt/volumes/gluster-rancher/var/log/glusterfs:/var/log/glusterfs:z
+    - /opt/volumes/gluster-rancher/brick:/opt/brick
+    - /opt/volumes/gluster-rancher/mount:/opt/mount:shared
+    tty: true
+    labels:
+      io.rancher.container.hostname_override: container_name
+      io.rancher.container.pull_image: always
+      io.rancher.scheduler.global: 'true'
+  SambaLB:
+    image: rancher/lb-service-haproxy:v0.9.1
+    ports:
+    - 139:139/tcp
+    - 445:445/tcp
+    labels:
+      io.rancher.container.agent.role: environmentAdmin,agent
+      io.rancher.container.agent_service.drain_provider: 'true'
+      io.rancher.container.create_agent: 'true'
+      io.rancher.scheduler.global: 'true'

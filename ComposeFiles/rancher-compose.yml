@@ -1,0 +1,54 @@
+version: '2'
+services:
+  Samba:
+    retain_ip: true
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 445
+      unhealthy_threshold: 3
+      initializing_timeout: 60000
+      interval: 2000
+      strategy: recreate
+      reinitializing_timeout: 60000
+  Gluster:
+    retain_ip: true
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      recreate_on_quorum_strategy_config:
+        quorum: 1
+      port: 9090
+      unhealthy_threshold: 3
+      initializing_timeout: 120000
+      interval: 2000
+      strategy: recreateOnQuorum
+      request_line: GET "/" "HTTP/1.0"
+      reinitializing_timeout: 60000
+  SambaLB:
+    start_on_create: true
+    lb_config:
+      certs: []
+      port_rules:
+      - priority: 1
+        protocol: tcp
+        service: Samba
+        source_port: 139
+        target_port: 139
+      - priority: 2
+        protocol: tcp
+        service: Samba
+        source_port: 445
+        target_port: 445
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 42
+      unhealthy_threshold: 3
+      initializing_timeout: 60000
+      interval: 2000
+      strategy: recreate
+      reinitializing_timeout: 60000
+
