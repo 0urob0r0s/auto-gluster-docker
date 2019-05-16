@@ -1,6 +1,6 @@
 FROM centos:7
 
-MAINTAINER Humble Chirammal hchiramm@redhat.com Saravanakumar Arumugam sarumuga@redhat.com Joao Guimaraes joao@linux.com.uy
+MAINTAINER Humble Chirammal hchiramm@redhat.com Saravanakumar Arumugam sarumuga@redhat.com JAGM2019
 
 ENV container docker
 
